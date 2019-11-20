@@ -1,0 +1,22 @@
+.padding-0 {
+  padding: 0 !important;
+}
+.padding-5 {
+  padding: 5px !important;
+}
+.hiddenFileInput {
+  position: fixed;
+  left: -100000px;
+  top:  -100000px;
+}
+
+.canvasParent {
+  height: 100%;
+}
+
+.canvasParent, .canvasParent canvas {
+  background-color: lightgray;
+}
+.canvasParent canvas.cursorPointer {
+    cursor: pointer;
+}
