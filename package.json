@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "babel-jest": "^24.9.0",
     "copy-webpack-plugin": "^4.5.1",
     "css-loader": "^0.28.7",
     "node-sass": "^4.7.2",
@@ -13,20 +12,22 @@
     "webpack-dev-server": "^3.1.3"
   },
   "scripts": {
+    "test": "mocha --require @babel/register",
     "dev-start": "webpack-dev-server --host 0.0.0.0 --hot --inline"
   },
   "devDependencies": {
+    "@babel/cli": "^7.7.0",
     "@babel/core": "^7.7.2",
+    "@babel/node": "^7.7.0",
     "@babel/preset-env": "^7.7.1",
     "@babel/preset-react": "^7.7.0",
+    "@babel/register": "^7.7.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.6",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
-    "jest": "^24.9.0"
-  },
-  "jest": {
-    "moduleFileExtensions": ["js"],
-    "moduleDirectories": ["node_modules", "app"]
+    "chai": "^4.2.0",
+    "mocha": "^6.2.2",
+    "nodemon": "^2.0.1"
   }
 }

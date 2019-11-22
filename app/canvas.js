@@ -19,14 +19,13 @@ export default class Canvas extends Component {
       this.setPoints();
     if (prevProps.startPoint !== this.props.startPoint && this.props.startPoint)
       this.drawPath();
-    if (prevProps.selectedPoint && prevProps.selectedPoint !== this.props.selectedPoint) {
+    if (this.props.selectedPoint && prevProps.selectedPoint !== this.props.selectedPoint) {
       this.selectedPoint = this.props.selectedPoint;
       this.drawPoints();
     }
   }
   
   drawPath() {
-    console.log('this.props.startPoint', this.props.startPoint);
     if (this.drawPathInterval !== null)
       clearInterval(this.drawPathInterval);
 
@@ -35,7 +34,6 @@ export default class Canvas extends Component {
         current = this.props.startPoint;
 
     this.drawPathInterval = setInterval(() => {
-      console.log('draw line form ' + current.xScaled + ',' + current.yScaled + ' to ' + current.next.xScaled + ',' + current.next.yScaled);
       ctx.beginPath();
       ctx.moveTo(current.xScaled, current.yScaled);
       ctx.lineTo(current.next.xScaled, current.next.yScaled);
@@ -64,7 +62,6 @@ export default class Canvas extends Component {
   drawAxes() {
     let canvas = this.canvasRef.current,
         ctx = canvas.getContext("2d");
-    console.log(this.axes);
     this.axes.forEach(p => {
       ctx.beginPath();
       ctx.moveTo(p.start.xScaled, p.start.yScaled);
