@@ -24,22 +24,24 @@ export default class Canvas extends Component {
       this.drawPoints();
     }
   }
+
+  drawLine(x1, y1, x2, y2, color) {
+    let canvas = this.canvasRef.current,
+        ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color || "black";
+    ctx.stroke(); 
+  }
   
   drawPath() {
     if (this.drawPathInterval !== null)
       clearInterval(this.drawPathInterval);
 
-    let canvas = this.canvasRef.current,
-        ctx = canvas.getContext("2d"),
-        current = this.props.startPoint;
-
+    let current = this.props.startPoint;
     this.drawPathInterval = setInterval(() => {
-      ctx.beginPath();
-      ctx.moveTo(current.xScaled, current.yScaled);
-      ctx.lineTo(current.next.xScaled, current.next.yScaled);
-      ctx.strokeStyle = "red";
-      ctx.stroke();
-
+      this.drawLine(current.xScaled, current.yScaled, current.next.xScaled, current.next.yScaled, "red")
       current = current.next;
       if (current === this.props.startPoint)
         clearInterval(this.drawPathInterval);
@@ -60,15 +62,33 @@ export default class Canvas extends Component {
   }
 
   drawAxes() {
-    let canvas = this.canvasRef.current,
-        ctx = canvas.getContext("2d");
-    this.axes.forEach(p => {
-      ctx.beginPath();
-      ctx.moveTo(p.start.xScaled, p.start.yScaled);
-      ctx.lineTo(p.end.xScaled, p.end.yScaled);
-      ctx.strokeStyle = "black";
-      ctx.stroke();    
+    Object.keys(this.axes).forEach(ax => {
+      let p = this.axes[ax];
+      this.drawLine(p.start.xScaled, p.start.yScaled, p.end.xScaled, p.end.yScaled);
+      if (ax === 'x')
+        this.drawAxXMarkers(p.start.xScaled, this.axes['y'].start.yScaled);
+      else
+        this.drawAxYMarkers(this.axes['x'].start.xScaled, p.start.yScaled);
     });
+
+  }
+
+  drawAxXMarkers(x, y) {
+    let lineCounts = 12,
+        itemSize = Math.floor(this.state.width / lineCounts);
+    for (let i = 0; i < lineCounts; i++) {
+      x += itemSize
+      this.drawLine(x, y - 5, x, y + 5);
+    }
+  }
+
+  drawAxYMarkers(x, y) {
+    let lineCounts = 12,
+        itemSize = Math.floor(this.state.height / lineCounts);
+    for (let i = 0; i < lineCounts; i++) {
+      y -= itemSize
+      this.drawLine(x - 5, y, x + 5, y);
+    }
   }
 
   hoveringPoint(pageX, pageY) {
@@ -78,7 +98,7 @@ export default class Canvas extends Component {
     return this.props.points.reduce((acc, p) => Math.abs(p.xScaled - x) < 4.0 && Math.abs(p.yScaled - y) < 4.0 ? p : acc, false);
   }
 
-  onClick(evt) {
+  onClick() {
     if (!this.state.mousePos)
       return;
     this.selectedPoint = this.state.mousePos;
@@ -116,8 +136,8 @@ export default class Canvas extends Component {
           'x': xSize < ySize ? ySize / xSize : 1.0
         },
         ratio = Math.max(
-          (xMax - Math.abs(xMin) + (.5 * border['x'])) / this.state.width,
-          (yMax - Math.abs(yMin) + (.5 * border['y'])) / this.state.height
+          (xSize + (.5 * border['x'])) / this.state.width,
+          (ySize + (.5 * border['y'])) / this.state.height
         );
 
     this.scaleForCanvas = (point) => {
@@ -126,18 +146,16 @@ export default class Canvas extends Component {
       point.yScaled = canvas.offsetHeight - yScaled + canvas.offsetTop
       return point;
     };
-    this.axes = [
-      // X
-      {
+    this.axes = {
+      'x': {
         start: this.scaleForCanvas({x: xMin, y: yMin - border['y']}),
         end:   this.scaleForCanvas({x: xMin, y: yMax + border['y']})
       },
-      // Y
-      {
+      'y': {
         start: this.scaleForCanvas({x: xMin - border['x'], y: yMin}),
         end:   this.scaleForCanvas({x: xMax + border['x'], y: yMin})
       }
-    ];
+    };
   }
 
   setupCanvas() {
