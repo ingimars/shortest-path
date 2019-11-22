@@ -20,3 +20,15 @@
 .canvasParent canvas.cursorPointer {
     cursor: pointer;
 }
+
+.pointlist {
+  max-height: 300px;
+  overflow: auto;
+  margin: 3px 0;
+  border-top: 3px black solid;
+  border-bottom: 3px black solid;
+}
+
+.fakeLink:hover {
+  cursor: pointer;
+}
