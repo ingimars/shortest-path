@@ -8,6 +8,7 @@ export default class Canvas extends Component {
     this.selectedPoint = null;
     this.drawPathInterval = null;
     this.state = {width: 100, height: 100, mousePos: false}
+    window.onresize = this.setupCanvas.bind(this);
   }
 
   componentDidMount() {
@@ -16,18 +17,17 @@ export default class Canvas extends Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.points !== this.props.points)
-      this.setPoints();
+      this.setupCanvas();
     if (prevProps.startPoint !== this.props.startPoint && this.props.startPoint)
       this.drawPath();
     if (this.props.selectedPoint && prevProps.selectedPoint !== this.props.selectedPoint) {
       this.selectedPoint = this.props.selectedPoint;
-      this.drawPoints();
+      this.setupCanvas();
     }
   }
 
   drawLine(x1, y1, x2, y2, color) {
-    let canvas = this.canvasRef.current,
-        ctx = canvas.getContext("2d");
+    let ctx = this.getContext();
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -49,10 +49,7 @@ export default class Canvas extends Component {
   }
 
   drawPoints() {
-    let canvas = this.canvasRef.current,
-        ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    this.drawAxes();
+    let ctx = this.getContext();
     this.props.points.forEach((p, i) => {
       ctx.fillStyle = p === this.selectedPoint ? "blue" : "darkgray";
       ctx.beginPath();
@@ -62,33 +59,34 @@ export default class Canvas extends Component {
   }
 
   drawAxes() {
+    console.log('this.axes', this.axes);
     Object.keys(this.axes).forEach(ax => {
       let p = this.axes[ax];
       this.drawLine(p.start.xScaled, p.start.yScaled, p.end.xScaled, p.end.yScaled);
-      if (ax === 'x')
-        this.drawAxXMarkers(p.start.xScaled, this.axes['y'].start.yScaled);
-      else
-        this.drawAxYMarkers(this.axes['x'].start.xScaled, p.start.yScaled);
+      p.markers.forEach(marker => {
+        this.drawLine(marker.from.xScaled, marker.from.yScaled, marker.to.xScaled, marker.to.yScaled);
+        if (!marker.text) return;
+        switch(ax) {
+          case 'x':
+            this.drawText(marker.from.xScaled - 12, marker.from.yScaled + 20, marker.text);
+            break;  
+          case 'y':
+            this.drawText(marker.from.xScaled - 50, marker.from.yScaled + 5, marker.text);
+            break;
+        }
+      });
     });
-
   }
 
-  drawAxXMarkers(x, y) {
-    let lineCounts = 12,
-        itemSize = Math.floor(this.state.width / lineCounts);
-    for (let i = 0; i < lineCounts; i++) {
-      x += itemSize
-      this.drawLine(x, y - 5, x, y + 5);
-    }
+  drawText(x, y, text) {
+    let ctx = this.getContext();
+    ctx.fillStyle = "black";
+    ctx.font =  "15px Arial";
+    ctx.fillText(text, x, y);
   }
 
-  drawAxYMarkers(x, y) {
-    let lineCounts = 12,
-        itemSize = Math.floor(this.state.height / lineCounts);
-    for (let i = 0; i < lineCounts; i++) {
-      y -= itemSize
-      this.drawLine(x - 5, y, x + 5, y);
-    }
+  getContext() {
+    return this.canvasRef.current.getContext("2d");
   }
 
   hoveringPoint(pageX, pageY) {
@@ -110,50 +108,89 @@ export default class Canvas extends Component {
     this.setState({mousePos: this.hoveringPoint(evt.pageX, evt.pageY)});
   }
 
-  setPoints() {
-    this.setupBoundaries();
-    this.props.points.forEach(p => this.scaleForCanvas(p));
-    this.drawPoints();
+  getBoundaries() {
+    let boundaries = {
+      canvas: {
+        offsetHeight: this.canvasRef.current.offsetHeight,
+        offsetTop: this.canvasRef.current.offsetTop
+      },
+      x: {min: 0, max: 300, size: 400, border: 100, planeRatio: 1},
+      y: {min: 0, max: 300, size: 400, border: 100, planeRatio: 1},
+      ratio: this.state.height / 315.0
+    };
+    if (!this.props.points.length)
+      return boundaries;
+
+    let reduceFn = (field, fn) => this.props.points.reduce(fn(field), null),
+        maxFn = (field) => (acc, p) => acc === null || p[field] > acc ? p[field] : acc,
+        minFn = (field) => (acc, p) => acc === null || p[field] < acc ? p[field] : acc;
+
+    boundaries.x.min = reduceFn('x', minFn);
+    boundaries.x.max = reduceFn('x', maxFn);
+    boundaries.x.size = boundaries.x.max - boundaries.x.min;
+    boundaries.x.border = Math.round(.10 * boundaries.x.size);
+    
+    boundaries.y.min = reduceFn('y', minFn);
+    boundaries.y.max = reduceFn('y', maxFn);
+    boundaries.y.size = boundaries.y.max - boundaries.y.min;
+    boundaries.y.border = Math.round(.10 * boundaries.y.size);
+
+    boundaries.x.planeRatio = boundaries.x.size < boundaries.y.size ? boundaries.y.size / boundaries.x.size : 1.0;
+    boundaries.y.planeRatio = boundaries.y.size < boundaries.x.size ? boundaries.x.size / boundaries.y.size : 1.0;
+
+    boundaries.ratio = Math.max(
+      (boundaries.x.size + (.5 * boundaries.x.border)) / this.state.width,
+      (boundaries.y.size + (.5 * boundaries.y.border)) / this.state.height
+    )
+
+    return boundaries;
   }
 
   setupBoundaries() {
-    let canvas = this.canvasRef.current,
-        reduceFn = (field, fn) => this.props.points.reduce(fn(field), null),
-        maxFn = (field) => (acc, p) => acc === null || p[field] > acc ? p[field] : acc,
-        minFn = (field) => (acc, p) => acc === null || p[field] < acc ? p[field] : acc,
-        xMin = reduceFn('x', minFn),
-        xMax = reduceFn('x', maxFn),
-        yMin = reduceFn('y', minFn),
-        yMax = reduceFn('y', maxFn),
-        xSize = xMax - Math.abs(xMin),
-        ySize = yMax - Math.abs(yMin),
-        border = {
-          'x': .10 * xSize,
-          'y': .10 * ySize
-        },
-        planeRatio = {
-          'y': ySize < xSize ? xSize / ySize : 1.0,
-          'x': xSize < ySize ? ySize / xSize : 1.0
-        },
-        ratio = Math.max(
-          (xSize + (.5 * border['x'])) / this.state.width,
-          (ySize + (.5 * border['y'])) / this.state.height
-        );
+    let b = this.getBoundaries();
 
     this.scaleForCanvas = (point) => {
-      point.xScaled = ((point.x * ratio) + border['x']) * planeRatio['x'];
-      let yScaled = ((point.y * ratio) + border['y']) * planeRatio['y'];
-      point.yScaled = canvas.offsetHeight - yScaled + canvas.offsetTop
+      point.xScaled = ((point.x * b.ratio) + b.x.border) * b.x.planeRatio;
+      let yScaled = ((point.y * b.ratio) + b.y.border) * b.y.planeRatio;
+      point.yScaled = b.canvas.offsetHeight - yScaled + b.canvas.offsetTop
       return point;
     };
+
+    let markerRangeFun = (min, size) => {
+      let markerCount = 12,
+          roundFun = val => Math.round(val / 10.0) * 10,
+          markerSize = roundFun(size / markerCount),
+          minVal = roundFun(min),
+          arr = [];
+      for (let i = 0; i < markerCount; i++) {
+        let val = minVal + (i * markerSize);
+        if (val !== 0)
+          arr[i] = val;
+      }
+      return arr;
+    };
     this.axes = {
-      'x': {
-        start: this.scaleForCanvas({x: xMin, y: yMin - border['y']}),
-        end:   this.scaleForCanvas({x: xMin, y: yMax + border['y']})
+      x: {
+        start: this.scaleForCanvas({x: b.x.min, y: b.y.min - b.y.border}),
+        end: this.scaleForCanvas({x: b.x.min, y: b.y.max + b.y.border}),
+        markers: markerRangeFun(b.x.min - b.x.border, b.x.size + (2 * b.x.border)).map(x => {
+          return {
+            from: this.scaleForCanvas({x: x, y: b.y.min - 5}),
+            to: this.scaleForCanvas({x: x, y: b.y.min + 5}),
+            text: x
+          }
+        })  
       },
-      'y': {
-        start: this.scaleForCanvas({x: xMin - border['x'], y: yMin}),
-        end:   this.scaleForCanvas({x: xMax + border['x'], y: yMin})
+      y: {
+        start: this.scaleForCanvas({x: b.x.min - b.x.border, y: b.y.min}),
+        end: this.scaleForCanvas({x: b.x.max + b.x.border, y: b.y.min}),
+        markers: markerRangeFun(b.y.min - b.y.border, b.y.size + (2 * b.y.border)).map(y => {
+          return {
+            from: this.scaleForCanvas({x: b.x.min - 5, y: y}),
+            to: this.scaleForCanvas({x: b.x.min + 5, y: y}),
+            text: y
+          }
+        })
       }
     };
   }
@@ -162,6 +199,13 @@ export default class Canvas extends Component {
     this.setState({
       width: this.canvasRef.current.parentElement.offsetWidth,
       height: this.canvasRef.current.parentElement.offsetHeight
+    });
+    setTimeout(() => {
+      this.getContext().clearRect(0, 0, this.state.width, this.state.height);
+      this.setupBoundaries();
+      this.drawAxes();
+      this.props.points.forEach(p => this.scaleForCanvas(p));
+      this.drawPoints();
     });
   }
 
