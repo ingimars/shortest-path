@@ -3,7 +3,7 @@ import Canvas from "./canvas"
 import Importer from "./importer"
 import Menu from "./menu"
 import PointList from "./point_list"
-import NearestNeighbour from "./nearest_neighbour"
+import NearestNeighbour from "../logic/nearest_neighbour"
 
 export default class Main extends Component {
 
