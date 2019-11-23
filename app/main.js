@@ -3,23 +3,24 @@ import Canvas from "./canvas"
 import Importer from "./importer"
 import Menu from "./menu"
 import PointList from "./point_list"
-import Utils from "./utils"
 import NearestNeighbour from "./nearest_neighbour"
 
 export default class Main extends Component {
 
   constructor() {
     super();
+    this.nearestNeighbour = new NearestNeighbour();
     this.state = {points: [], selectedPoint: null, startPoint: false}
   }
 
   findNearestNeighbour() {
-    this.setState({startPoint: this.nearestNeighbour.find(this.state.selectedPoint)});
+    this.nearestNeighbour.setPoints(this.state.points);
+    this.nearestNeighbour.find(this.state.selectedPoint);
+    this.setState({startPoint: this.nearestNeighbour.getStartPoint()});
   }
 
   setPointsCallback(points) {
     this.setState({points: points, startPoint: false});
-    this.nearestNeighbour = new NearestNeighbour(Utils.copyArrayOfObjects(points));
   }
 
   render() {

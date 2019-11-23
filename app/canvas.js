@@ -34,7 +34,7 @@ export default class Canvas extends Component {
     ctx.strokeStyle = color || "black";
     ctx.stroke(); 
   }
-  
+
   drawPath() {
     if (this.drawPathInterval !== null)
       clearInterval(this.drawPathInterval);
@@ -59,7 +59,6 @@ export default class Canvas extends Component {
   }
 
   drawAxes() {
-    console.log('this.axes', this.axes);
     Object.keys(this.axes).forEach(ax => {
       let p = this.axes[ax];
       this.drawLine(p.start.xScaled, p.start.yScaled, p.end.xScaled, p.end.yScaled);

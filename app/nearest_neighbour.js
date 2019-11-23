@@ -1,19 +1,23 @@
-import Utils from './utils'
+import Algorithm from './algorithm';
+import Utils from './utils';
 
-export default class NearestNeighbour {
+export default class NearestNeighbour extends Algorithm {
 
-  constructor(allPoints) {
-    this.allPoints = allPoints;
+  constructor() {
+    super();
   }
 
-  find(startPoint) {
+  run(startPoint) {
     if (this.allPoints.length < 2)
-      return null;
+      return;
 
-    let startPointCopy = {...startPoint},
-        lastPoint = this.createLinkedList(startPointCopy, Utils.copyArrayOfObjects(this.allPoints));
+    let startPointCopy = {...startPoint};
+    this.setStartPoint(startPointCopy);
+    let lastPoint = this.createLinkedList(startPointCopy, this.allPoints);
     lastPoint.next = startPointCopy;
-    return startPointCopy;
+    startPointCopy.prev = lastPoint;
+    startPointCopy.distanceFromPrev = Utils.distanceBetweenPoints(startPointCopy, lastPoint);
+    this.addDistance(startPointCopy.distanceFromPrev);
   }
 
   createLinkedList(currentPoint, neighbours) {
@@ -21,6 +25,7 @@ export default class NearestNeighbour {
     if (!newNeighbours.length)
       return currentPoint;
     let nextPoint = this.nearestNeighbour(currentPoint, newNeighbours);
+    this.addDistance(nextPoint.distanceFromPrev);
     currentPoint.next = nextPoint;
     return this.createLinkedList(nextPoint, newNeighbours);
   }
