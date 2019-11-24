@@ -1,5 +1,5 @@
 import Assert from 'assert';
-import NearestNeighbour from '../app/logic/nearest_neighbour';
+import NearestNeighbour from '../app/logic/algorithms/nearest_neighbour';
 import Utils from '../app/logic/utils';
 
 describe('NearestNeighbour', () => {

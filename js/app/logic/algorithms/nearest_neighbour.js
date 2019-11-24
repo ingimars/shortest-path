@@ -1,5 +1,5 @@
 import Algorithm from './algorithm';
-import Utils from './utils';
+import Utils from '../utils';
 
 export default class NearestNeighbour extends Algorithm {
 
