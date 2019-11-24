@@ -107,86 +107,105 @@ export default class Canvas extends Component {
     this.setState({mousePos: this.hoveringPoint(evt.pageX, evt.pageY)});
   }
 
-  getBoundaries() {
-    let boundaries = {
-      canvas: {
-        offsetHeight: this.canvasRef.current.offsetHeight,
-        offsetTop: this.canvasRef.current.offsetTop
-      },
-      x: {min: 0, max: 300, size: 400, border: 100, planeRatio: 1},
-      y: {min: 0, max: 300, size: 400, border: 100, planeRatio: 1},
-      ratio: this.state.height / 315.0
-    };
-    if (!this.props.points.length)
-      return boundaries;
+  getBoundaries(points) {
+    if (!points.length)
+      points = [{x: 0, y: 200}, {x: 200, y: 0}];
 
-    let reduceFn = (field, fn) => this.props.points.reduce(fn(field), null),
+    let boundaries = {
+          canvas: {
+            offsetHeight: this.canvasRef.current.offsetHeight,
+            offsetTop: this.canvasRef.current.offsetTop
+          },
+          x: {min: 0, max: 0, size: 0, offset: 0},
+          y: {min: 0, max: 0, size: 0, offset: 0},
+          ratio: {x: 1.0, y: 1.0},
+          ax: {x: 0, y: 0}
+        },
+        reduceFn = (field, fn) => points.reduce(fn(field), null),
         maxFn = (field) => (acc, p) => acc === null || p[field] > acc ? p[field] : acc,
         minFn = (field) => (acc, p) => acc === null || p[field] < acc ? p[field] : acc;
 
     boundaries.x.min = reduceFn('x', minFn);
     boundaries.x.max = reduceFn('x', maxFn);
     boundaries.x.size = boundaries.x.max - boundaries.x.min;
-    boundaries.x.border = Math.round(.10 * boundaries.x.size);
-    
+    let borderX = Math.min(Math.round(.15 * boundaries.x.size), 100.0);
+    boundaries.x.size += (2.0 * borderX);
+    boundaries.x.min -= borderX;
+    boundaries.x.max += borderX;
+    boundaries.x.offset = boundaries.x.min < 0 ? Math.abs(boundaries.x.min) : 0;
+
     boundaries.y.min = reduceFn('y', minFn);
     boundaries.y.max = reduceFn('y', maxFn);
     boundaries.y.size = boundaries.y.max - boundaries.y.min;
-    boundaries.y.border = Math.round(.10 * boundaries.y.size);
+    let borderY = Math.min(Math.round(.15 * boundaries.y.size), 100.0);
+    boundaries.y.size += (2.0 * borderY);
+    boundaries.y.min -= borderY;
+    boundaries.y.max += borderY;
+    boundaries.y.offset = boundaries.y.min < 0 ? Math.abs(boundaries.y.min) : 0;
 
-    boundaries.x.planeRatio = boundaries.x.size < boundaries.y.size ? boundaries.y.size / boundaries.x.size : 1.0;
-    boundaries.y.planeRatio = boundaries.y.size < boundaries.x.size ? boundaries.x.size / boundaries.y.size : 1.0;
+    let axFun = (val) => Math.round(val / 1000) * 1000;
+    boundaries.ax = {
+      x: axFun(boundaries.x.min < 0 ? 0 : boundaries.x.min),
+      y: axFun(boundaries.y.min < 0 ? 0 : boundaries.y.min)
+    }
 
-    boundaries.ratio = Math.max(
-      (boundaries.x.size + (.5 * boundaries.x.border)) / this.state.width,
-      (boundaries.y.size + (.5 * boundaries.y.border)) / this.state.height
-    )
+    boundaries.ratio = {x: this.state.width / boundaries.x.size, y: this.state.height / boundaries.y.size};
 
     return boundaries;
   }
 
   setupBoundaries() {
-    let b = this.getBoundaries();
+    let b = this.getBoundaries(this.props.points);
 
     this.scaleForCanvas = (point) => {
-      point.xScaled = ((point.x * b.ratio) + b.x.border) * b.x.planeRatio;
-      let yScaled = ((point.y * b.ratio) + b.y.border) * b.y.planeRatio;
-      point.yScaled = b.canvas.offsetHeight - yScaled + b.canvas.offsetTop
+      point.xScaled = ((point.x + b.x.offset) * b.ratio.x);
+      let yScaled = ((point.y + b.y.offset) * b.ratio.y);
+      point.yScaled = b.canvas.offsetHeight - yScaled + b.canvas.offsetTop;
       return point;
     };
 
     let markerRangeFun = (min, size) => {
-      let markerCount = 12,
-          roundFun = val => Math.round(val / 10.0) * 10,
-          markerSize = roundFun(size / markerCount),
-          minVal = roundFun(min),
-          arr = [];
-      for (let i = 0; i < markerCount; i++) {
-        let val = minVal + (i * markerSize);
-        if (val !== 0)
-          arr[i] = val;
-      }
-      return arr;
-    };
+        let markerCount = 12,
+            ratio = (size > 999 ? 100.0 : 10.0),
+            roundFun = val => Math.round(val / ratio) * ratio,
+            markerSize = roundFun(size / markerCount),
+            minVal = roundFun(min),
+            arr = [];
+        for (let i = 0; i < markerCount; i++) {
+          let val = minVal + (i * markerSize);
+          if (val > 10)
+            arr[i] = val;
+        }
+        return arr;
+      },
+      axRangeSize = Math.round(.015 * Math.max(b.x.size, b.y.size)),
+      axRange = {
+        xFrom: b.x.min + b.x.offset - axRangeSize,
+        xTo: b.x.min + b.x.offset + axRangeSize,
+        xSize: b.x.size + b.x.offset,
+        yFrom: b.y.min + b.y.offset - axRangeSize,
+        yTo: b.y.min + b.y.offset + axRangeSize,
+        ySize: b.y.size + b.y.offset
+      };
     this.axes = {
       x: {
-        start: this.scaleForCanvas({x: b.x.min, y: b.y.min - b.y.border}),
-        end: this.scaleForCanvas({x: b.x.min, y: b.y.max + b.y.border}),
-        markers: markerRangeFun(b.x.min - b.x.border, b.x.size + (2 * b.x.border)).map(x => {
+        start: this.scaleForCanvas({x: b.ax.x, y: b.y.min}),
+        end: this.scaleForCanvas({x: b.ax.x, y: b.y.max}),
+        markers: markerRangeFun(b.x.min, axRange.xSize).map(x => {
           return {
-            from: this.scaleForCanvas({x: x, y: b.y.min - 5}),
-            to: this.scaleForCanvas({x: x, y: b.y.min + 5}),
+            from: this.scaleForCanvas({x: x, y: axRange.yFrom}),
+            to: this.scaleForCanvas({x: x, y: axRange.yTo}),
             text: x
           }
         })  
       },
       y: {
-        start: this.scaleForCanvas({x: b.x.min - b.x.border, y: b.y.min}),
-        end: this.scaleForCanvas({x: b.x.max + b.x.border, y: b.y.min}),
-        markers: markerRangeFun(b.y.min - b.y.border, b.y.size + (2 * b.y.border)).map(y => {
+        start: this.scaleForCanvas({x: b.x.min, y: b.ax.y}),
+        end: this.scaleForCanvas({x: b.x.max, y: b.ax.y}),
+        markers: markerRangeFun(b.y.min, axRange.ySize).map(y => {
           return {
-            from: this.scaleForCanvas({x: b.x.min - 5, y: y}),
-            to: this.scaleForCanvas({x: b.x.min + 5, y: y}),
+            from: this.scaleForCanvas({x: axRange.xFrom, y: y}),
+            to: this.scaleForCanvas({x: axRange.xTo, y: y}),
             text: y
           }
         })

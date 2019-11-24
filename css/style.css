@@ -10,6 +10,10 @@
   top:  -100000px;
 }
 
+.buttonPadding {
+  padding: 5px !important;
+}
+
 .canvasParent {
   height: 100%;
 }
