@@ -26,6 +26,12 @@ export default class Canvas extends Component {
     }
   }
 
+  stopDrawing() {
+    if (this.drawPathInterval !== null)
+      clearInterval(this.drawPathInterval);
+    this.drawPathInterval = null;
+  }
+
   drawLine(x1, y1, x2, y2, color) {
     let ctx = this.getContext();
     ctx.beginPath();
@@ -36,9 +42,7 @@ export default class Canvas extends Component {
   }
 
   drawPath() {
-    if (this.drawPathInterval !== null)
-      clearInterval(this.drawPathInterval);
-
+    this.stopDrawing();
     let current = this.props.startPoint;
     this.drawPathInterval = setInterval(() => {
       this.drawLine(current.xScaled, current.yScaled, current.next.xScaled, current.next.yScaled, "red")
@@ -219,6 +223,7 @@ export default class Canvas extends Component {
       height: this.canvasRef.current.parentElement.offsetHeight
     });
     setTimeout(() => {
+      this.stopDrawing();
       this.getContext().clearRect(0, 0, this.state.width, this.state.height);
       this.setupBoundaries();
       this.drawAxes();

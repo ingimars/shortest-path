@@ -3,13 +3,9 @@ import Utils from '../utils';
 
 export default class NearestNeighbour extends Algorithm {
 
-  constructor() {
-    super();
-  }
-
   run(startPoint) {
     if (this.allPoints.length < 2)
-      return;
+      return {result: false, reason: 'min', value: 2};
 
     let startPointCopy = {...startPoint};
     this.setStartPoint(startPointCopy);
@@ -18,6 +14,7 @@ export default class NearestNeighbour extends Algorithm {
     startPointCopy.prev = lastPoint;
     startPointCopy.distanceFromPrev = Utils.distanceBetweenPoints(startPointCopy, lastPoint);
     this.addDistance(startPointCopy.distanceFromPrev);
+    return {result: true};
   }
 
   createLinkedList(currentPoint, neighbours) {
@@ -43,12 +40,6 @@ export default class NearestNeighbour extends Algorithm {
     if (nextPoint !== null)
       nextPoint.prev = currentPoint;
     return nextPoint;
-  }
-
-  removePointFromPoints(points, point) {
-    if (point == null)
-      return points;
-    return points.filter(p => p.x !== point.x || p.y !== point.y);
   }
 
 }

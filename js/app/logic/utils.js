@@ -7,4 +7,8 @@ export default class Utils {
   static randomRange(min, max) {
     return Math.random() * (max - min) + min;
   }
+
+  static copyObjectArray(arr) {
+    return arr.map(obj => {return {...obj}});
+  }
 }

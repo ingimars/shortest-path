@@ -39,9 +39,9 @@ export default class Importer extends Component {
   }
 
   clickRandomData() {
-    let pointCount = parseInt(Utils.randomRange(20, 50)),
+    let pointCount = 10,
         arr = new Array(pointCount),
-        genrFun = () => parseFloat(Utils.randomRange(-1000, 1000).toFixed(2));
+        genrFun = () => parseFloat(Utils.randomRange(50, 500).toFixed(2));
     for (let i = 0; i < pointCount; i++)
       arr[i] = {x: genrFun(), y: genrFun()};
     this.props.setPointsCallback(arr);
@@ -50,15 +50,15 @@ export default class Importer extends Component {
   render() {
     return (
       <div className="container-fluid">
-        <div className="row buttonPadding">
-          <div className="col-sm text-center buttonPadding">
+        <div className="row p-2">
+          <div className="col-sm text-center p-1">
             <input type="file" className="hiddenFileInput" ref={this.uploadRef} onChange={this.handleImportData.bind(this)} />
             <button type="button" className="btn btn-block btn-primary" onClick={this.clickImportData.bind(this)}>Import</button>
           </div>
-          <div className="col-sm text-center buttonPadding">
+          <div className="col-sm text-center p-1">
             <button type="button" className="btn btn-block btn-primary" onClick={this.clickRandomData.bind(this)}>Random</button>
           </div>
-          <div className="col-sm text-center buttonPadding">
+          <div className="col-sm text-center p-1">
             <button type="button" className="btn btn-block btn-primary" onClick={this.clickPresetData.bind(this)}>Preset</button>
           </div>
         </div>
