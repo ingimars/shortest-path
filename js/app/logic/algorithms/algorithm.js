@@ -24,6 +24,10 @@ export default class Algorithm {
       return this.startPoint;
     }
 
+    getResult() {
+      return this.runResult;
+    }
+
     setStartPoint(startPoint) {
       this.startPoint = startPoint;
     }

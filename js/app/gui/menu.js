@@ -2,13 +2,6 @@ import React, { Component } from "react";
 
 export default class Menu extends Component {
 
-  constructor() {
-    super();
-    this.state = {
-
-    }
-  }
-
   render() {
     return (
       <div className="container">
@@ -27,7 +20,7 @@ export default class Menu extends Component {
               </select>
             </div>
           <div>
-            <button type="button" className="btn btn-block btn-success" onClick={this.props.runAlgorithmCallback}>Find shortest path</button>
+            <button type="button" className="btn btn-block btn-success" onClick={this.props.runAlgorithmCallback}>Run</button>
           </div>
           </div>
         </div>

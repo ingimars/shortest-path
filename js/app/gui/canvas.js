@@ -129,7 +129,7 @@ export default class Canvas extends Component {
         maxFn = (field) => (acc, p) => acc === null || p[field] > acc ? p[field] : acc,
         minFn = (field) => (acc, p) => acc === null || p[field] < acc ? p[field] : acc;
 
-    boundaries.x.min = reduceFn('x', minFn);
+    boundaries.x.min = Math.min(0, reduceFn('x', minFn));
     boundaries.x.max = reduceFn('x', maxFn);
     boundaries.x.size = boundaries.x.max - boundaries.x.min;
     let borderX = Math.min(Math.round(.15 * boundaries.x.size), 100.0);
@@ -138,7 +138,7 @@ export default class Canvas extends Component {
     boundaries.x.max += borderX;
     boundaries.x.offset = boundaries.x.min < 0 ? Math.abs(boundaries.x.min) : 0;
 
-    boundaries.y.min = reduceFn('y', minFn);
+    boundaries.y.min = Math.min(0, reduceFn('y', minFn));
     boundaries.y.max = reduceFn('y', maxFn);
     boundaries.y.size = boundaries.y.max - boundaries.y.min;
     let borderY = Math.min(Math.round(.15 * boundaries.y.size), 100.0);
@@ -146,12 +146,6 @@ export default class Canvas extends Component {
     boundaries.y.min -= borderY;
     boundaries.y.max += borderY;
     boundaries.y.offset = boundaries.y.min < 0 ? Math.abs(boundaries.y.min) : 0;
-
-    let axFun = (val) => Math.round(val / 1000) * 1000;
-    boundaries.ax = {
-      x: axFun(boundaries.x.min < 0 ? 0 : boundaries.x.min),
-      y: axFun(boundaries.y.min < 0 ? 0 : boundaries.y.min)
-    }
 
     boundaries.ratio = {x: this.state.width / boundaries.x.size, y: this.state.height / boundaries.y.size};
 
@@ -168,34 +162,34 @@ export default class Canvas extends Component {
       return point;
     };
 
-    let markerRangeFun = (min, size) => {
+    let markerRangeFun = (start, size, ax) => {
         let markerCount = 12,
-            ratio = (size > 999 ? 100.0 : 10.0),
-            roundFun = val => Math.round(val / ratio) * ratio,
+            roundFun = val => Math.round(val / 10.0) * 10,
             markerSize = roundFun(size / markerCount),
-            minVal = roundFun(min),
+            startVal = roundFun(start),
             arr = [];
         for (let i = 0; i < markerCount; i++) {
-          let val = minVal + (i * markerSize);
-          if (val > 10)
-            arr[i] = val;
+          let val = startVal + (i * markerSize),
+              distanceFromAx = Math.abs(ax - val);
+          if (distanceFromAx > markerSize)
+            arr.push(val);
         }
         return arr;
       },
       axRangeSize = Math.round(.015 * Math.max(b.x.size, b.y.size)),
       axRange = {
-        xFrom: b.x.min + b.x.offset - axRangeSize,
-        xTo: b.x.min + b.x.offset + axRangeSize,
-        xSize: b.x.size + b.x.offset,
-        yFrom: b.y.min + b.y.offset - axRangeSize,
-        yTo: b.y.min + b.y.offset + axRangeSize,
-        ySize: b.y.size + b.y.offset
+        xFrom: b.ax.x - axRangeSize,
+        xTo: b.ax.x + axRangeSize,
+        xSize: (b.x.size + b.x.offset) * 1.25,
+        yFrom: b.ax.y - axRangeSize,
+        yTo: b.ax.y + axRangeSize,
+        ySize: (b.y.size + b.y.offset) * 1.25
       };
-    this.axes = {
+      this.axes = {
       x: {
-        start: this.scaleForCanvas({x: b.ax.x, y: b.y.min}),
-        end: this.scaleForCanvas({x: b.ax.x, y: b.y.max}),
-        markers: markerRangeFun(b.x.min, axRange.xSize).map(x => {
+        start: this.scaleForCanvas({x: b.ax.x, y: b.y.min - b.y.size}),
+        end: this.scaleForCanvas({x: b.ax.x, y: b.y.max + b.y.size}),
+        markers: markerRangeFun(b.x.min, axRange.xSize, b.ax.x).map(x => {
           return {
             from: this.scaleForCanvas({x: x, y: axRange.yFrom}),
             to: this.scaleForCanvas({x: x, y: axRange.yTo}),
@@ -204,9 +198,9 @@ export default class Canvas extends Component {
         })  
       },
       y: {
-        start: this.scaleForCanvas({x: b.x.min, y: b.ax.y}),
-        end: this.scaleForCanvas({x: b.x.max, y: b.ax.y}),
-        markers: markerRangeFun(b.y.min, axRange.ySize).map(y => {
+        start: this.scaleForCanvas({x: b.x.min - b.x.size, y: b.ax.y}),
+        end: this.scaleForCanvas({x: b.x.max + b.x.size, y: b.ax.y}),
+        markers: markerRangeFun(b.y.min, axRange.ySize, b.ax.y).map(y => {
           return {
             from: this.scaleForCanvas({x: axRange.xFrom, y: y}),
             to: this.scaleForCanvas({x: axRange.xTo, y: y}),

@@ -39,12 +39,27 @@ export default class Importer extends Component {
   }
 
   clickRandomData() {
-    let pointCount = 10,
-        arr = new Array(pointCount),
-        genrFun = () => parseFloat(Utils.randomRange(50, 500).toFixed(2));
-    for (let i = 0; i < pointCount; i++)
-      arr[i] = {x: genrFun(), y: genrFun()};
-    this.props.setPointsCallback(arr);
+    let selectedValue = 5;
+    this.props.showDialogCallback({
+      content: (
+        <div className="pb-5">
+          <div className="form-group form-control-lg">
+            <label>Select number of random points</label>
+            <select className="form-control" onChange={e => selectedValue = parseInt(e.target.value)}>
+              {[...Array(46).keys()].map((option, i) => <option key={i}>{option + 5}</option>)}
+            </select>
+          </div>
+        </div>
+      ),
+      applyText: "Generate",
+      applyFun: (closeFun) => {
+        let genrFun = () => parseFloat(Utils.randomRange(-200, 600).toFixed(2));
+        this.props.setPointsCallback([...Array(selectedValue).keys()].map(() => {
+          return {x: genrFun(), y: genrFun()};
+        }));
+        closeFun();
+      }
+    });
   }
 
   render() {
