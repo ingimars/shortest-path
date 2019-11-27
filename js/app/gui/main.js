@@ -24,9 +24,7 @@ export default class Main extends Component {
   }
 
   renderMissingData() {
-    let text = "Select point..";
-    if (!this.state.points.length)
-      text = "No data..";
+    let text = !this.state.points.length ? "No data.." : "Select point..";
     return (
       <div className="container">
         <div className="p-2 text-center">{text}</div>
@@ -41,14 +39,6 @@ export default class Main extends Component {
         <Result />
       </div>
     );
-  }
-
-  removeDialog() {
-    this.setState({dialogData: {visible: false}});
-  }
-
-  showDialog(dialogData) {
-    this.setState({dialogData: {...dialogData, visible: true}});
   }
 
   render() {
