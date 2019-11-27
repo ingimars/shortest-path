@@ -53,12 +53,10 @@ export default class ExhaustiveSearch extends Algorithm {
         return;
     }
     arr[arr.length -1].next = arr[0];
-
-    if (totalDistance <= this.bestRoute.distance)
-      this.bestRoute = {
-        distance: totalDistance,
-        startPoint: arr[0]
-      }
+    this.bestRoute = {
+      distance: totalDistance,
+      startPoint: arr[0]
+    }
   }
 
   // https://en.wikipedia.org/wiki/Heap%27s_algorithm
