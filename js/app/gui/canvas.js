@@ -18,11 +18,13 @@ export default class Canvas extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    let isNewStartPoint = prevState.startPoint !== this.state.startPoint && this.state.startPoint;
     if (prevState.points !== this.state.points 
-          || (this.state.selectedPoint && prevState.selectedPoint !== this.state.selectedPoint))
+          || (this.state.selectedPoint && prevState.selectedPoint !== this.state.selectedPoint)
+          || isNewStartPoint)
       this.setupCanvas();
-    if (prevState.startPoint !== this.state.startPoint && this.state.startPoint)
-      this.drawPath();
+    if (isNewStartPoint)
+      setTimeout(this.drawPath.bind(this), 100);
   }
 
   getStoreState() {

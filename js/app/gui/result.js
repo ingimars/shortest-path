@@ -17,7 +17,7 @@ export default class Result extends Component {
   }
 
   render() {
-    if (!this.state.runResult.duration)
+    if (!this.state.runResult.distance)
       return null;
 
     return (
