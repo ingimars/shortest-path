@@ -1,4 +1,6 @@
 import React, { Component } from "react";
+import Store from "../flux/store"
+import Action from "../flux/action"
 
 export default class Canvas extends Component {
 
@@ -7,23 +9,33 @@ export default class Canvas extends Component {
     this.canvasRef = React.createRef();
     this.selectedPoint = null;
     this.drawPathInterval = null;
-    this.state = {width: 100, height: 100, mousePos: false}
+    this.state = {...this.getStoreState(), width: 100, height: 100, mousePos: false};
     window.onresize = this.setupCanvas.bind(this);
+    Store.addChangeListener((c) => this.setState(this.getStoreState()));
   }
 
   componentDidMount() {
     this.setupCanvas();
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.points !== this.props.points)
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.points !== this.state.points)
       this.setupCanvas();
-    if (prevProps.startPoint !== this.props.startPoint && this.props.startPoint)
+    if (prevState.startPoint !== this.state.startPoint && this.state.startPoint) {
       this.drawPath();
-    if (this.props.selectedPoint && prevProps.selectedPoint !== this.props.selectedPoint) {
-      this.selectedPoint = this.props.selectedPoint;
+    }
+    if (this.state.selectedPoint && prevState.selectedPoint !== this.state.selectedPoint) {
+      this.selectedPoint = this.state.selectedPoint;
       this.setupCanvas();
     }
+  }
+
+  getStoreState() {
+    return {
+      points: Store.getPoints(),
+      selectedPoint: Store.getSelectedPoint(),
+      startPoint: Store.getStartPoint()
+    };
   }
 
   stopDrawing() {
@@ -43,18 +55,18 @@ export default class Canvas extends Component {
 
   drawPath() {
     this.stopDrawing();
-    let current = this.props.startPoint;
+    let current = this.state.startPoint;
     this.drawPathInterval = setInterval(() => {
       this.drawLine(current.xScaled, current.yScaled, current.next.xScaled, current.next.yScaled, "red")
       current = current.next;
-      if (current === this.props.startPoint)
+      if (current === this.state.startPoint)
         clearInterval(this.drawPathInterval);
     }, 200);
   }
 
   drawPoints() {
     let ctx = this.getContext();
-    this.props.points.forEach((p, i) => {
+    this.state.points.forEach((p, i) => {
       ctx.fillStyle = p === this.selectedPoint ? "blue" : "darkgray";
       ctx.beginPath();
       ctx.arc(p.xScaled, p.yScaled, 5, 0, Math.PI * 2, true);
@@ -96,7 +108,7 @@ export default class Canvas extends Component {
     let canvas = this.canvasRef.current,
         x = pageX - canvas.offsetLeft,
         y = pageY - canvas.offsetLeft;
-    return this.props.points.reduce((acc, p) => Math.abs(p.xScaled - x) < 4.0 && Math.abs(p.yScaled - y) < 4.0 ? p : acc, false);
+    return this.state.points.reduce((acc, p) => Math.abs(p.xScaled - x) < 4.0 && Math.abs(p.yScaled - y) < 4.0 ? p : acc, false);
   }
 
   onClick() {
@@ -104,7 +116,7 @@ export default class Canvas extends Component {
       return;
     this.selectedPoint = this.state.mousePos;
     this.drawPoints();
-    this.props.setSelectedPointCallback(this.selectedPoint);
+    Action.setSelectedPoint(this.selectedPoint);
   }
 
   onMouseMove(evt) {
@@ -153,7 +165,7 @@ export default class Canvas extends Component {
   }
 
   setupBoundaries() {
-    let b = this.getBoundaries(this.props.points);
+    let b = this.getBoundaries(this.state.points);
 
     this.scaleForCanvas = (point) => {
       point.xScaled = ((point.x + b.x.offset) * b.ratio.x);
@@ -221,7 +233,7 @@ export default class Canvas extends Component {
       this.getContext().clearRect(0, 0, this.state.width, this.state.height);
       this.setupBoundaries();
       this.drawAxes();
-      this.props.points.forEach(p => this.scaleForCanvas(p));
+      this.state.points.forEach(p => this.scaleForCanvas(p));
       this.drawPoints();
     });
   }

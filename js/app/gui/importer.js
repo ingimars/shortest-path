@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import PresetData from "../logic/preset_data";
 import Utils from "../logic/utils";
+import Action from "../flux/action"
 
 export default class Importer extends Component {
   
@@ -10,7 +10,7 @@ export default class Importer extends Component {
   }
 
   setData(lines) {
-    let data = lines.map(line => {
+    let points = lines.map(line => {
       let split = line.split(' ');
       if (split.length < 2)
         return null;
@@ -20,7 +20,7 @@ export default class Importer extends Component {
         return null;
       return {x: x, y: y};
     }).filter(val => val !== null);
-    this.props.setPointsCallback(data);
+    Action.setPoints(points);
   }
 
   handleImportData(e) {
@@ -34,17 +34,13 @@ export default class Importer extends Component {
     this.uploadRef.current.click();
   }
 
-  clickPresetData() {
-    this.props.setPointsCallback(PresetData.get());
-  }
-
-  clickRandomData() {
+  clickGenerate() {
     let selectedValue = 5;
-    this.props.showDialogCallback({
+    Action.setDialogData({
       content: (
         <div className="pb-5">
           <div className="form-group form-control-lg">
-            <label>Select number of random points</label>
+            <label>Select number of points to generate</label>
             <select className="form-control" onChange={e => selectedValue = parseInt(e.target.value)}>
               {[...Array(46).keys()].map((option, i) => <option key={i}>{option + 5}</option>)}
             </select>
@@ -54,12 +50,13 @@ export default class Importer extends Component {
       applyText: "Generate",
       applyFun: (closeFun) => {
         let genrFun = () => parseFloat(Utils.randomRange(-200, 600).toFixed(2));
-        this.props.setPointsCallback([...Array(selectedValue).keys()].map(() => {
+        Action.setPoints([...Array(selectedValue).keys()].map(() => {
           return {x: genrFun(), y: genrFun()};
         }));
         closeFun();
       }
     });
+    Action.showDialog();
   }
 
   render() {
@@ -71,10 +68,7 @@ export default class Importer extends Component {
             <button type="button" className="btn btn-block btn-primary" onClick={this.clickImportData.bind(this)}>Import</button>
           </div>
           <div className="col-sm text-center p-1">
-            <button type="button" className="btn btn-block btn-primary" onClick={this.clickRandomData.bind(this)}>Random</button>
-          </div>
-          <div className="col-sm text-center p-1">
-            <button type="button" className="btn btn-block btn-primary" onClick={this.clickPresetData.bind(this)}>Preset</button>
+            <button type="button" className="btn btn-block btn-primary" onClick={this.clickGenerate.bind(this)}>Generate</button>
           </div>
         </div>
       </div>

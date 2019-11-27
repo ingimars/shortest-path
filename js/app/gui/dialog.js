@@ -1,15 +1,24 @@
 import React, { Component } from "react";
+import Store from "../flux/store"
+import Action from "../flux/action"
 
 export default class Dialog extends Component {
 
   constructor() {
     super();
     this.topPositionStart = '-500px';
-    this.state = {topPosition: '0px'};
+    this.state = {...this.getStoreState(), topPosition: '0px'};
+    Store.addChangeListener((c) => this.setState(this.getStoreState()));
   }
 
-  componentDidUpdate(prevProps) {
-    if (this.props.dialogData.visible && !prevProps.dialogData.visible) {
+  getStoreState() {
+    return {
+      dialogData: Store.getDialogData()
+    };
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.dialogData.visible && !prevState.dialogData.visible) {
       this.setState({topPosition: this.topPositionStart});
       setTimeout(() => this.setState({topPosition: '0px'}), 100);
     }
@@ -33,11 +42,11 @@ export default class Dialog extends Component {
 
   close() {
     this.setState({topPosition: this.topPositionStart});
-    setTimeout(() => this.props.removeDialogCallback(), 1000);
+    setTimeout(() => Action.removeDialog(), 1000);
   }
 
   render() {
-    let opts = this.getOpts(this.props.dialogData),
+    let opts = this.getOpts(this.state.dialogData),
         modalBodyStyle = {};
     if (opts.contentNoPadding)
       modalBodyStyle['padding'] = '0px';
