@@ -7,7 +7,6 @@ export default class Canvas extends Component {
   constructor() {
     super();
     this.canvasRef = React.createRef();
-    this.selectedPoint = null;
     this.drawPathInterval = null;
     this.state = {...this.getStoreState(), width: 100, height: 100, mousePos: false};
     window.onresize = this.setupCanvas.bind(this);
@@ -19,15 +18,11 @@ export default class Canvas extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevState.points !== this.state.points)
+    if (prevState.points !== this.state.points 
+          || (this.state.selectedPoint && prevState.selectedPoint !== this.state.selectedPoint))
       this.setupCanvas();
-    if (prevState.startPoint !== this.state.startPoint && this.state.startPoint) {
+    if (prevState.startPoint !== this.state.startPoint && this.state.startPoint)
       this.drawPath();
-    }
-    if (this.state.selectedPoint && prevState.selectedPoint !== this.state.selectedPoint) {
-      this.selectedPoint = this.state.selectedPoint;
-      this.setupCanvas();
-    }
   }
 
   getStoreState() {
@@ -67,9 +62,10 @@ export default class Canvas extends Component {
   drawPoints() {
     let ctx = this.getContext();
     this.state.points.forEach((p, i) => {
-      ctx.fillStyle = p === this.selectedPoint ? "blue" : "darkgray";
+      let isSelected = p === this.state.selectedPoint;
+      ctx.fillStyle = isSelected ? "blue" : "black";
       ctx.beginPath();
-      ctx.arc(p.xScaled, p.yScaled, 5, 0, Math.PI * 2, true);
+      ctx.arc(p.xScaled, p.yScaled, isSelected ? 7 : 5, 0, Math.PI * 2, true);
       ctx.fill();
     });
   }
@@ -108,15 +104,14 @@ export default class Canvas extends Component {
     let canvas = this.canvasRef.current,
         x = pageX - canvas.offsetLeft,
         y = pageY - canvas.offsetLeft;
-    return this.state.points.reduce((acc, p) => Math.abs(p.xScaled - x) < 4.0 && Math.abs(p.yScaled - y) < 4.0 ? p : acc, false);
+    return this.state.points.reduce((acc, p) => Math.abs(p.xScaled - x) < 4.5 && Math.abs(p.yScaled - y) < 4.5 ? p : acc, false);
   }
 
   onClick() {
     if (!this.state.mousePos)
       return;
-    this.selectedPoint = this.state.mousePos;
     this.drawPoints();
-    Action.setSelectedPoint(this.selectedPoint);
+    Action.setSelectedPoint(this.state.mousePos);
   }
 
   onMouseMove(evt) {
