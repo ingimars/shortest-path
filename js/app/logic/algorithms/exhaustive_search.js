@@ -5,19 +5,18 @@ export default class ExhaustiveSearch extends Algorithm {
 
   constructor() {
     super();
+    this.maxPoints = 10;
     this.bestRoute = {startPoint: null, distance: Number.MAX_SAFE_INTEGER};
     this.possibleRoutes = [];
     this.distances = {};
   }
 
-  run(startPoint) {
-    if (this.allPoints.length < 2)
-      return {result: false, reason: 'min', value: 2};
-    if (this.allPoints.length > 10)
-      return {result: false, reason: 'max', value: 10};
-    let points = this.removePointFromPoints(Utils.copyObjectArray(this.allPoints), startPoint),
+  run(startPoint, findFun) {
+    let searchFun = findFun || this.heapPermutation.bind(this),
+        points = this.removePointFromPoints(Utils.copyObjectArray(this.allPoints), startPoint),
         len = points.length;
-    this.heapPermutation(points, len, len);
+    searchFun(points, len, len);
+
     this.possibleRoutes.forEach(arr => this.setBestRoute({...startPoint}, arr));
     this.setStartPoint(this.bestRoute.startPoint);
     this.setDistance(this.bestRoute.distance);

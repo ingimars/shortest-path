@@ -4,9 +4,6 @@ import Utils from '../utils';
 export default class NearestNeighbour extends Algorithm {
 
   run(startPoint) {
-    if (this.allPoints.length < 2)
-      return {result: false, reason: 'min', value: 2};
-
     let startPointCopy = {...startPoint};
     this.setStartPoint(startPointCopy);
     let lastPoint = this.createLinkedList(startPointCopy, this.allPoints);

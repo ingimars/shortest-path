@@ -3,6 +3,7 @@ import Constant from './constants.js';
 import { EventEmitter } from 'events';
 import ExhaustiveSearch from "../logic/algorithms/exhaustive_search";
 import NearestNeighbour from "../logic/algorithms/nearest_neighbour";
+import KNearestNeighbour from "../logic/algorithms/k_nearest_neighbour";
 
 let CHANGE_EVENT = 'change';
 class Store extends EventEmitter {
@@ -12,6 +13,7 @@ class Store extends EventEmitter {
     this.points = [];
     this.algorithms = {
       "Nearest neighbour": new NearestNeighbour(),
+      "KNearest neighbour": new KNearestNeighbour(),
       "Exhaustive search": new ExhaustiveSearch()
     };
     this.selectedAlgorithm = "Nearest neighbour";
@@ -98,6 +100,7 @@ class Store extends EventEmitter {
   }
 
   setStartPoint(startPoint) {
+    console.log('store setStartPoint...', startPoint);
     this.startPoint = startPoint;
   }
 
